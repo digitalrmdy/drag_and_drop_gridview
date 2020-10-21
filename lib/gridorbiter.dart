@@ -97,7 +97,9 @@ class _MainGridViewState extends State<MainGridView> {
   ScrollController _scrollController2;
   var _gridViewHeight, _gridViewWidth;
   var _isDragStart = false;
+
   var _isStillInDragTarget = false;
+  var _gridMoving = false;
 
   @override
   void initState() {
@@ -109,39 +111,54 @@ class _MainGridViewState extends State<MainGridView> {
     super.initState();
   }
 
+  double get moveUpOffset => _scrollController.offset - _gridViewHeight;
+
   _moveUp() async {
-    while (_isStillInDragTarget) {
-      await _scrollController.animateTo(
-          _scrollController.offset - _gridViewHeight,
-          curve: Curves.linear,
-          duration: Duration(milliseconds: 500));
-    }
+    if (_gridMoving) return;
+    _gridMoving = true;
+    await _scrollController.animateTo(
+      _scrollController.offset - _gridViewHeight,
+      curve: Curves.linear,
+      duration: Duration(milliseconds: 500),
+    );
+    _gridMoving = false;
+    if (_isStillInDragTarget) _moveUp();
   }
 
   _moveDown() async {
-    while (_isStillInDragTarget) {
-      await _scrollController.animateTo(
-          _scrollController.offset + _gridViewHeight,
-          curve: Curves.linear,
-          duration: Duration(milliseconds: 500));
-    }
+    if (_gridMoving) return;
+    _gridMoving = true;
+    await _scrollController.animateTo(
+      _scrollController.offset + _gridViewHeight,
+      curve: Curves.linear,
+      duration: Duration(milliseconds: 500),
+    );
+    _gridMoving = false;
+    if (_isStillInDragTarget) _moveDown();
   }
 
   _moveLeft() async {
-    while (_isStillInDragTarget)
-      await _scrollController.animateTo(
-          _scrollController.offset - _gridViewWidth,
-          curve: Curves.linear,
-          duration: Duration(milliseconds: 500));
+    if (_gridMoving) return;
+    _gridMoving = true;
+    await _scrollController.animateTo(
+      _scrollController.offset - _gridViewWidth,
+      curve: Curves.linear,
+      duration: Duration(milliseconds: 500),
+    );
+    _gridMoving = false;
+    if (_isStillInDragTarget) _moveLeft();
   }
 
   _moveRight() async {
-    while (_isStillInDragTarget) {
-      await _scrollController.animateTo(
-          _scrollController.offset + _gridViewWidth,
-          curve: Curves.linear,
-          duration: Duration(milliseconds: 500));
-    }
+    if (_gridMoving) return;
+    _gridMoving = true;
+    await _scrollController.animateTo(
+      _scrollController.offset + _gridViewWidth,
+      curve: Curves.linear,
+      duration: Duration(milliseconds: 500),
+    );
+    _gridMoving = false;
+    if (_isStillInDragTarget) _moveRight();
   }
 
   Widget _headerChild() {
@@ -236,6 +253,7 @@ class _MainGridViewState extends State<MainGridView> {
       onDragCompleted: () {
         setState(() {
           _isDragStart = false;
+          _isStillInDragTarget = false;
         });
       },
     );
@@ -349,6 +367,7 @@ class _MainGridViewState extends State<MainGridView> {
                     _isStillInDragTarget = true;
                     if (!widget.isVertical) {
                       _moveRight();
+                      if (!widget.keepScrolling) _isStillInDragTarget = false;
                       return false;
                     }
                     _moveUp();
@@ -377,6 +396,7 @@ class _MainGridViewState extends State<MainGridView> {
                     _isStillInDragTarget = true;
                     if (!widget.isVertical) {
                       _moveLeft();
+                      if (!widget.keepScrolling) _isStillInDragTarget = false;
                       return false;
                     }
                     _moveDown();
