@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/gestures.dart';
 import 'package:drag_and_drop_gridview/drag.dart';
+import 'package:flutter/gestures.dart';
+import 'package:flutter/material.dart';
 
 class MainGridView extends StatefulWidget {
   MainGridView(
@@ -20,6 +20,7 @@ class MainGridView extends StatefulWidget {
       this.padding,
       this.semanticChildCount,
       this.physics,
+      this.keepScrolling = false,
       this.addAutomaticKeepAlives,
       this.addRepaintBoundaries,
       this.addSemanticIndexes,
@@ -44,6 +45,9 @@ class MainGridView extends StatefulWidget {
   final ScrollController controller;
   final bool primary;
   final ScrollPhysics physics;
+
+  //if you want to keep scrolling through the list without having to move the grid item out of the drag target every time.
+  final bool keepScrolling;
 
   // If you want to set custom feedback child at the time of drag then set this parameter to true
   final bool isCustomFeedback;
@@ -93,6 +97,7 @@ class _MainGridViewState extends State<MainGridView> {
   ScrollController _scrollController2;
   var _gridViewHeight, _gridViewWidth;
   var _isDragStart = false;
+  var _isStillInDragTarget = false;
 
   @override
   void initState() {
@@ -104,24 +109,39 @@ class _MainGridViewState extends State<MainGridView> {
     super.initState();
   }
 
-  _moveUp() {
-    _scrollController.animateTo(_scrollController.offset - _gridViewHeight,
-        curve: Curves.linear, duration: Duration(milliseconds: 500));
+  _moveUp() async {
+    while (_isStillInDragTarget) {
+      await _scrollController.animateTo(
+          _scrollController.offset - _gridViewHeight,
+          curve: Curves.linear,
+          duration: Duration(milliseconds: 500));
+    }
   }
 
-  _moveDown() {
-    _scrollController.animateTo(_scrollController.offset + _gridViewHeight,
-        curve: Curves.linear, duration: Duration(milliseconds: 500));
+  _moveDown() async {
+    while (_isStillInDragTarget) {
+      await _scrollController.animateTo(
+          _scrollController.offset + _gridViewHeight,
+          curve: Curves.linear,
+          duration: Duration(milliseconds: 500));
+    }
   }
 
-  _moveLeft() {
-    _scrollController.animateTo(_scrollController.offset - _gridViewWidth,
-        curve: Curves.linear, duration: Duration(milliseconds: 500));
+  _moveLeft() async {
+    while (_isStillInDragTarget)
+      await _scrollController.animateTo(
+          _scrollController.offset - _gridViewWidth,
+          curve: Curves.linear,
+          duration: Duration(milliseconds: 500));
   }
 
-  _moveRight() {
-    _scrollController.animateTo(_scrollController.offset + _gridViewWidth,
-        curve: Curves.linear, duration: Duration(milliseconds: 500));
+  _moveRight() async {
+    while (_isStillInDragTarget) {
+      await _scrollController.animateTo(
+          _scrollController.offset + _gridViewWidth,
+          curve: Curves.linear,
+          duration: Duration(milliseconds: 500));
+    }
   }
 
   Widget _headerChild() {
@@ -326,13 +346,17 @@ class _MainGridViewState extends State<MainGridView> {
                     color: Colors.transparent,
                   ),
                   onWillAccept: (data) {
+                    _isStillInDragTarget = true;
                     if (!widget.isVertical) {
                       _moveRight();
                       return false;
                     }
                     _moveUp();
+                    if (!widget.keepScrolling) _isStillInDragTarget = false;
                     return false;
                   },
+                  onLeave: (_) => _isStillInDragTarget = false,
+                  onAccept: (_) => _isStillInDragTarget = false,
                 ),
               ),
         !_isDragStart
@@ -350,13 +374,17 @@ class _MainGridViewState extends State<MainGridView> {
                     color: Colors.transparent,
                   ),
                   onWillAccept: (data) {
+                    _isStillInDragTarget = true;
                     if (!widget.isVertical) {
                       _moveLeft();
                       return false;
                     }
                     _moveDown();
+                    if (!widget.keepScrolling) _isStillInDragTarget = false;
                     return false;
                   },
+                  onLeave: (_) => _isStillInDragTarget = false,
+                  onAccept: (_) => _isStillInDragTarget = false,
                 ),
               ),
       ],
