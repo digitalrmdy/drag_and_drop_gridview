@@ -13,6 +13,7 @@ class MainGridView extends StatefulWidget {
       @required this.onWillAccept,
       this.feedback,
       @required this.onReorder,
+      this.onDraggableCancelled,
       this.childWhenDragging,
       this.itemBuilderHeader,
       this.controller,
@@ -64,6 +65,8 @@ class MainGridView extends StatefulWidget {
   // This method onReorder has two parameters oldIndex and newIndex
   final Function onReorder;
   final Function onReorderHeader;
+
+  final Function onDraggableCancelled;
 
   final EdgeInsetsGeometry padding;
   final int headerItemCount;
@@ -249,6 +252,10 @@ class _MainGridViewState extends State<MainGridView> {
         setState(() {
           _isDragStart = true;
         });
+      },
+      onDraggableCanceled: (_, __) {
+        if (widget.onDraggableCancelled == null) return;
+        widget.onDraggableCancelled();
       },
       onDragCompleted: () {
         setState(() {
